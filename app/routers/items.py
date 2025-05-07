@@ -62,7 +62,8 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             # transform 
             session_data = {
                 "sessionId": session["session_id"],
-                "date": datetime.strptime(session["date"], "%Y-%m-%d").strftime("%B %d, %Y"),
+                "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
+                "endDate": datetime.strptime(session["end_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "data": [],
                 "startTimes": [],
                 "descriptions": []

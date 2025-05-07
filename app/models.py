@@ -3,7 +3,8 @@ from typing import List
 
 class SessionResponse(BaseModel):
     sessionId: int
-    date: str
+    startDate: str
+    endDate:str
     data: List[float]  # db_level values
     startTimes: List[str]
     descriptions: List[str]
