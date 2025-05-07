@@ -1,0 +1,165 @@
+from ast import Dict
+from fastapi import APIRouter, HTTPException
+from app.models import PointResponse
+from app.services.db import database as supabase
+from datetime import datetime
+import statistics
+
+from typing import Dict, Any
+
+
+router = APIRouter()
+
+@router.get("/points/{point_id}", response_model=PointResponse)
+async def get_point_with_sessions(point_id: int) -> Dict[str, Any]: 
+    """
+    Returns point data with nested sessions in the exact format:
+    {
+        "pointId": "2",
+        "lat": 14.6450,
+        "lon": 121.0642,
+        "brgy": "Krus Na Ligas",
+        "city": "Quezon City",
+        "sessions": [...]
+    }
+    """
+    try:
+        # 1. point data
+        point_res = supabase.table("points")\
+                         .select("*")\
+                         .eq("point_id", point_id)\
+                         .execute()
+        
+        if not point_res.data:
+            raise HTTPException(status_code=404, detail="Point not found")
+        
+        point = point_res.data[0]
+        
+        # 2. get sessions for that point
+        sessions_res = supabase.table("sessions")\
+                            .select("*")\
+                            .eq("point_id", point_id)\
+                            .execute()
+        
+        sessions = []
+        
+        for session in sessions_res.data:
+            # 3. get recordings of that sesssion (with ai analysis)
+            recordings_res = supabase.table("audio_recordings")\
+                                  .select("id, db_level, start_time")\
+                                  .eq("session_id", session["session_id"])\
+                                  .order("start_time")\
+                                  .execute()
+            
+            # Get all analyses for these recordings in one query
+            recording_ids = [rec["id"] for rec in recordings_res.data]
+            analyses_res = supabase.table("ai_analysis")\
+                                .select("*")\
+                                .in_("recording_id", recording_ids)\
+                                .execute() if recording_ids else {"data": []}
+            
+            # Create analysis lookup dictionary
+            analyses = {a["recording_id"]: a for a in analyses_res.data}
+            
+            # transform 
+            session_data = {
+                "sessionId": session["session_id"],
+                "date": datetime.strptime(session["date"], "%Y-%m-%d").strftime("%B %d, %Y"),
+                "data": [],
+                "startTimes": [],
+                "descriptions": []
+            }
+            
+            for rec in recordings_res.data:
+                session_data["data"].append(rec.get("db_level"))
+                session_data["startTimes"].append(rec.get("start_time"))
+                
+                # Get analysis text if exists, otherwise "Normal."
+                analysis = analyses.get(rec["id"], {})
+                session_data["descriptions"].append(
+                    analysis.get("analysis_text", "Normal.")
+                )
+            
+            sessions.append(session_data)
+        
+        # final json format
+        response = {
+            "pointId": str(point["point_id"]),
+            "lat": point["latitude"],
+            "lon": point["longitude"],
+            "brgy": point["barangay_name"],
+            "city": point["city"],
+            "sessions": sessions
+        }
+        
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.get("/geojson/points")
+async def get_points_geojson() -> Dict[str, Any]:
+    """
+    Returns all points in GeoJSON format with aggregated session and noise data.
+    """
+    try:
+        # 1.get points
+        points_res = supabase.table("points").select("*").execute()
+        if not points_res.data:
+            raise HTTPException(status_code=404, detail="No points found")
+
+        features = []
+        
+        for point in points_res.data:
+            # 2. get sessions for that points
+            sessions_res = supabase.table("sessions")\
+                                .select("session_id")\
+                                .eq("point_id", point["point_id"])\
+                                .execute()
+            session_count = len(sessions_res.data)
+
+            # 3.get all recordings' db_levels for these sessions
+            db_levels = []
+            if session_count > 0:
+                # get all session IDs for this point
+                session_ids = [s["session_id"] for s in sessions_res.data]
+                
+                # get query recordings for sessions
+                recordings_res = supabase.table("audio_recordings")\
+                                    .select("db_level")\
+                                    .in_("session_id", session_ids)\
+                                    .execute()
+                
+                # extract non-null db levels
+                db_levels = [rec["db_level"] for rec in recordings_res.data 
+                             if rec["db_level"] is not None]
+
+            # 4)calculate mean noise level (default to 0 if no data)
+            mean_noise = statistics.mean(db_levels) if db_levels else 0.0
+
+            # 5.build geojson feature format
+            feature = {
+                "type": "Feature",
+                "id": point["point_id"],
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [point["longitude"], point["latitude"]]
+                },
+                "properties": {
+                    "noOfSessions": session_count,
+                    "meanNoiseLevel": round(mean_noise, 1),
+                    "brgy": point["barangay_name"],
+                    "city": point["city"]
+                }
+            }
+            features.append(feature)
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
