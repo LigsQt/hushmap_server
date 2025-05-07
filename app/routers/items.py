@@ -1,10 +1,8 @@
-from ast import Dict
 from fastapi import APIRouter, HTTPException
 from app.models import PointResponse
 from app.services.db import database as supabase
 from datetime import datetime
 import statistics
-
 from typing import Dict, Any
 
 
