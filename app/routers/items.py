@@ -22,7 +22,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
     }
     """
     try:
-        # 1. point data
+          # 1. point data
         point_res = supabase.table("points")\
                          .select("*")\
                          .eq("point_id", point_id)\
@@ -33,7 +33,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
         
         point = point_res.data[0]
         
-        # 2. get sessions for that point
+           # 2. get sessions for that point
         sessions_res = supabase.table("sessions")\
                             .select("*")\
                             .eq("point_id", point_id)\
@@ -44,22 +44,12 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
         for session in sessions_res.data:
             # 3. get recordings of that sesssion (with ai analysis)
             recordings_res = supabase.table("audio_recordings")\
-                                  .select("id, db_level, start_time")\
+                                  .select("id, db_level, start_time, analysis_text")\
                                   .eq("session_id", session["session_id"])\
                                   .order("start_time")\
                                   .execute()
             
-            # Get all analyses for these recordings in one query
-            recording_ids = [rec["id"] for rec in recordings_res.data]
-            analyses_res = supabase.table("ai_analysis")\
-                                .select("*")\
-                                .in_("recording_id", recording_ids)\
-                                .execute() if recording_ids else {"data": []}
-            
-            # Create analysis lookup dictionary
-            analyses = {a["recording_id"]: a for a in analyses_res.data}
-            
-            # transform 
+            # transform
             session_data = {
                 "sessionId": session["session_id"],
                 "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
@@ -72,11 +62,8 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             for rec in recordings_res.data:
                 session_data["data"].append(rec.get("db_level"))
                 session_data["startTimes"].append(rec.get("start_time"))
-                
-                # Get analysis text if exists, otherwise "Normal."
-                analysis = analyses.get(rec["id"], {})
                 session_data["descriptions"].append(
-                    analysis.get("analysis_text", "Normal.")
+                    rec.get("analysis_text", "Normal.")
                 )
             
             sessions.append(session_data)
@@ -95,7 +82,6 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @router.get("/geojson/points")
