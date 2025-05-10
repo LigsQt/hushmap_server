@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List 
 
 class SessionResponse(BaseModel):
-    sessionId: int
+    sessionNumber: int # sessionNumber instead of sessionID
     startDate: str
     endDate:str
     data: List[float]  # db_level values
