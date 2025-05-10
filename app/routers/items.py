@@ -10,19 +10,8 @@ router = APIRouter()
 
 @router.get("/points/{point_id}", response_model=PointResponse)
 async def get_point_with_sessions(point_id: int) -> Dict[str, Any]: 
-    """
-    Returns point data with nested sessions in the exact format:
-    {
-        "pointId": "2",
-        "lat": 14.6450,
-        "lon": 121.0642,
-        "brgy": "Krus Na Ligas",
-        "city": "Quezon City",
-        "sessions": [...]
-    }
-    """
     try:
-          # 1. point data
+        # 1. point data
         point_res = supabase.table("points")\
                          .select("*")\
                          .eq("point_id", point_id)\
@@ -33,16 +22,16 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
         
         point = point_res.data[0]
         
-           # 2. get sessions for that point
+        # 2. get sessions for that point - pero ngayon selecting session_number
         sessions_res = supabase.table("sessions")\
-                            .select("*")\
+                            .select("session_id, session_number, start_date, end_date")\
                             .eq("point_id", point_id)\
                             .execute()
         
         sessions = []
         
         for session in sessions_res.data:
-            # 3. get recordings of that sesssion (with ai analysis)
+            # 3. get recordings with analysis_text 
             recordings_res = supabase.table("audio_recordings")\
                                   .select("id, db_level, start_time, analysis_text")\
                                   .eq("session_id", session["session_id"])\
@@ -51,7 +40,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             
             # transform
             session_data = {
-                "sessionId": session["session_id"],
+                "sessionNumber": session["session_number"],  # Changed to session_number
                 "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "endDate": datetime.strptime(session["end_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "data": [],
