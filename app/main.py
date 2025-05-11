@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import items 
+from app.routers import items, audio 
 
 
 app = FastAPI()
 app.include_router(items.router)
+app.include_router(audio.router)
 
 # Add these lines before your endpoints
 app.add_middleware(
