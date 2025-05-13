@@ -15,4 +15,5 @@ class PointResponse(BaseModel):
     lon: float
     brgy: str
     city: str
+    meanNoise: float #mean Noise levels
     sessions: List[SessionResponse]
