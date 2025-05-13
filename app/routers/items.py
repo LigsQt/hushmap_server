@@ -29,6 +29,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
                             .execute()
         
         sessions = []
+        all_noise_levels = []  # To store all noise levels for mean calculation
         
         for session in sessions_res.data:
             # 3. get recordings with analysis_text 
@@ -38,9 +39,8 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
                                   .order("start_time")\
                                   .execute()
             
-            # transform
             session_data = {
-                "sessionNumber": session["session_number"],  # Changed to session_number
+                "sessionNumber": session["session_number"],
                 "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "endDate": datetime.strptime(session["end_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "data": [],
@@ -49,13 +49,18 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             }
             
             for rec in recordings_res.data:
-                session_data["data"].append(rec.get("db_level"))
+                noise_level = round(float(rec.get("db_level", 0)), 2)
+                session_data["data"].append(noise_level)
+                all_noise_levels.append(noise_level)  # Add to overall collection
                 session_data["startTimes"].append(rec.get("start_time"))
                 session_data["descriptions"].append(
                     rec.get("analysis_text", "Normal.")
                 )
             
             sessions.append(session_data)
+        
+        # Calculate mean noise for the point (rounded to 2 decimal places)
+        mean_noise = round(statistics.mean(all_noise_levels) if all_noise_levels else 0, 2)
         
         # final json format
         response = {
@@ -64,6 +69,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             "lon": point["longitude"],
             "brgy": point["barangay_name"],
             "city": point["city"],
+            "meanNoise": mean_noise,  # New attribute
             "sessions": sessions
         }
         
