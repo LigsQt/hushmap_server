@@ -27,5 +27,6 @@ def request_ai_description(audio_file: io.BytesIO):
         ai_description = "Error"  
 
 
-    print(end_time - start_time)
+    time_ai_get = end_time - start_time
+    print(f"AI Server time elapsed: {time_ai_get}")
     return ai_description  

@@ -8,6 +8,7 @@ import numpy as np
 import wave 
 import io
 import datetime
+import pytz
 # import os  
 
 router = APIRouter()
@@ -32,6 +33,8 @@ async def receive_audio_chunk(session_id: int, request: Request):
     data = await request.body()
     buffered_audio.extend(data)
 
+    print_stats()
+
     # Need timeout logic 
     if len(buffered_audio) >= bytes_needed_for_leq: 
         # This is the indicator that this is the one minute file that will be saved in the database
@@ -46,7 +49,9 @@ async def receive_audio_chunk(session_id: int, request: Request):
         print(ai_description)
         
         # Write Time 
-        timestamp = datetime.datetime.now().strftime("%H:%M")
+        utc_now = datetime.datetime.now(pytz.utc)
+        gmt8 = utc_now.astimezone(pytz.timezone("Asia/Manila"))
+        timestamp = gmt8.strftime("%H:%M")
         # Write to Database
         # pass ai_description, dBA level, point_id (hard coded), session_id(hard coded)
         
@@ -61,6 +66,13 @@ async def receive_audio_chunk(session_id: int, request: Request):
 
         # clear buffer
         buffered_audio.clear()
+
+def print_stats():
+    current_time_stored = len(buffered_audio) // ( SAMPLE_RATE * SAMPLE_WIDTH ) 
+    time_stats = f"Time recorded: {current_time_stored} / {LEQ_PERIOD_SEC}"
+    size_stats = f"Size buffered: {len(buffered_audio)} / {bytes_needed_for_leq}"
+    print(size_stats)
+    print(time_stats)
 
 def save_file():
     # Code that ehhances volume when file is saved
