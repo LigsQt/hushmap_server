@@ -36,7 +36,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             recordings_res = supabase.table("audio_recordings")\
                                   .select("id, db_level, start_time, analysis_text")\
                                   .eq("session_id", session["session_id"])\
-                                  .order("start_time")\
+                                  .order("id")\
                                   .execute()
             
             session_data = {
