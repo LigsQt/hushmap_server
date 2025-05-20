@@ -39,23 +39,32 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
                                   .order("id")\
                                   .execute()
             
+            session_noise_levels = []  # For session-specific mean
+            
             session_data = {
                 "sessionNumber": session["session_number"],
                 "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "endDate": datetime.strptime(session["end_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
+                "meanNoiseSession": 0.0,  # Initialize mean
                 "data": [],
                 "startTimes": [],
-                "descriptions": []
+                "descriptions": [],
+
             }
             
             for rec in recordings_res.data:
                 noise_level = round(float(rec.get("db_level", 0)), 2)
                 session_data["data"].append(noise_level)
-                all_noise_levels.append(noise_level)  # Add to overall collection
+                session_noise_levels.append(noise_level)
+                all_noise_levels.append(noise_level)
                 session_data["startTimes"].append(rec.get("start_time"))
                 session_data["descriptions"].append(
                     rec.get("analysis_text", "Normal.")
                 )
+            
+            # Calculate mean for this session
+            if session_noise_levels:
+                session_data["meanNoiseSession"] = round(statistics.mean(session_noise_levels), 2)
             
             sessions.append(session_data)
         
@@ -69,7 +78,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             "lon": point["longitude"],
             "brgy": point["barangay_name"],
             "city": point["city"],
-            "meanNoise": mean_noise,  # New attribute
+            "meanNoise": mean_noise,
             "sessions": sessions
         }
         
@@ -77,7 +86,6 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/geojson/points")
 async def get_points_geojson() -> Dict[str, Any]:
