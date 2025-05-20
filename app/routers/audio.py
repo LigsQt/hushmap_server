@@ -76,12 +76,12 @@ def print_stats():
 
 def save_file():
     # Code that ehhances volume when file is saved
-    # 1. Convert bytes to NumPy int16 array
-    audio_array = np.frombuffer(bytes(buffered_audio), dtype=np.int16)
+    # 1. Convert bytes to NumPy int32 array
+    audio_array = np.frombuffer(bytes(buffered_audio), dtype=np.int32)
 
     # 2. Amplify audio
-    amplified = audio_array * GAIN
-    amplified = np.clip(amplified, -32768, 32767).astype(np.int16)
+    amplified = audio_array.astype(np.float64) * GAIN # Promote to float for multiplication to avoid overflow
+    amplified = np.clip(amplified, -2147483648, 2147483647).astype(np.int32)
 
     # 3. Convert back to bytes
     amplified_bytes = amplified.tobytes()
