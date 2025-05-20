@@ -10,7 +10,7 @@ app.include_router(audio.router)
 # Add these lines before your endpoints
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Svelte's default port
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://hushmap.vercel.app"],  # Svelte's default port
     allow_methods=["*"],
     allow_headers=["*"],
 )
