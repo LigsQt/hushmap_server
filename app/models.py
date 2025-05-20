@@ -2,9 +2,10 @@ from pydantic import BaseModel
 from typing import List 
 
 class SessionResponse(BaseModel):
-    sessionNumber: int # sessionNumber instead of sessionID
+    sessionNumber: int
     startDate: str
     endDate:str
+    meanNoiseSession:float #mean noise of session
     data: List[float]  # db_level values
     startTimes: List[str]
     descriptions: List[str]
