@@ -45,6 +45,7 @@ async def get_point_with_sessions(point_id: int) -> Dict[str, Any]:
             
             session_data = {
                 "sessionNumber": session["session_number"],
+                "session_id": session["session_id"],
                 "startDate": datetime.strptime(session["start_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "endDate": datetime.strptime(session["end_date"], "%Y-%m-%d").strftime("%B %d, %Y"),
                 "meanNoiseSession": 0.0,  # Initialize mean

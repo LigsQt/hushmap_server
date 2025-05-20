@@ -3,6 +3,7 @@ from typing import List
 
 class SessionResponse(BaseModel):
     sessionNumber: int
+    session_id: int 
     startDate: str
     endDate:str
     meanNoiseSession:float #mean noise of session
