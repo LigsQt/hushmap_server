@@ -1,6 +1,8 @@
+from tokenize import String
 from fastapi import APIRouter, HTTPException
 from app.models import PointResponse
 from app.services.db import database as supabase
+from app.services.ai_description import request_session_description
 from datetime import datetime
 import statistics
 from typing import Dict, Any
@@ -151,3 +153,22 @@ async def get_points_geojson() -> Dict[str, Any]:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/session_info/{session_id}")
+async def get_session_ai_description(session_id: int) -> Any:
+    try:
+        session_res = supabase.table("audio_recordings")\
+                .select("analysis_text")\
+                .eq("session_id", session_id)\
+                .order("id")\
+                .execute()
+         
+        analysis_texts = "|".join([item["analysis_text"] for item in session_res.data])
+        
+
+        return request_session_description(analysis_texts)
+
+   
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
