@@ -6,7 +6,7 @@ import struct
 # --- Microphone Characteristics (Match ESP32) ---
 MIC_SENSITIVITY = -26.0
 MIC_REF_DB = 94.0
-MIC_OFFSET_DB = 3.010
+MIC_OFFSET_DB = 3.0103
 MIC_BITS = 24
 MAX_AMP_24BIT = (1 << (MIC_BITS - 1)) - 1
 MIC_REF_AMPL = pow(10.0, MIC_SENSITIVITY / 20.0) * MAX_AMP_24BIT
