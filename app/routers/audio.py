@@ -32,7 +32,7 @@ async def receive_audio_chunk(session_id: int, request: Request):
     """
     data = await request.body()
     buffered_audio.extend(data)
-
+    print(request.headers)
     print_stats()
 
     # Need timeout logic 
