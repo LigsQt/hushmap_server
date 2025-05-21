@@ -14,7 +14,7 @@ import pytz
 router = APIRouter()
 
 # Configurations/ constants:
-SAMPLE_RATE = 48000
+SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 4    # Bytes per sample
 NUM_CHANNELS = 1    # Mono 
 LEQ_PERIOD_SEC = 10 # Number of seconds to be recorded
