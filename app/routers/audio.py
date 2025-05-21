@@ -14,13 +14,13 @@ import pytz
 router = APIRouter()
 
 # Configurations/ constants:
-SAMPLE_RATE = 48000
+SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 4    # Bytes per sample
 NUM_CHANNELS = 1    # Mono 
-LEQ_PERIOD_SEC = 10 # Number of seconds to be recorded
+LEQ_PERIOD_SEC = 20 # Number of seconds to be recorded
 SAMPLES_PER_LEQ = SAMPLE_RATE * LEQ_PERIOD_SEC
 bytes_needed_for_leq = SAMPLES_PER_LEQ * SAMPLE_WIDTH
-GAIN = 8
+GAIN = 1
 
 
 buffered_audio = bytearray()
