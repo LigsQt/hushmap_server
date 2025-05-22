@@ -2,6 +2,7 @@ from tokenize import String
 from fastapi import APIRouter, HTTPException
 from app.models import PointResponse
 from app.services.db import database as supabase
+from app.services.db import is_point_active
 from app.services.ai_description import request_session_description
 from datetime import datetime
 import statistics
@@ -113,6 +114,7 @@ async def get_points_geojson() -> Dict[str, Any]:
 
             # 3.get all recordings' db_levels for these sessions
             db_levels = []
+            isActive = is_point_active(point["point_id"]) 
             if session_count > 0:
                 # get all session IDs for this point
                 session_ids = [s["session_id"] for s in sessions_res.data]
@@ -122,7 +124,6 @@ async def get_points_geojson() -> Dict[str, Any]:
                                     .select("db_level")\
                                     .in_("session_id", session_ids)\
                                     .execute()
-                
                 # extract non-null db levels
                 db_levels = [rec["db_level"] for rec in recordings_res.data 
                              if rec["db_level"] is not None]
@@ -142,7 +143,8 @@ async def get_points_geojson() -> Dict[str, Any]:
                     "noOfSessions": session_count,
                     "meanNoiseLevel": round(mean_noise, 1),
                     "brgy": point["barangay_name"],
-                    "city": point["city"]
+                    "city": point["city"], 
+                    "isActive": isActive,
                 }
             }
             features.append(feature)
